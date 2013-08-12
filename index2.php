@@ -1,4 +1,6 @@
 <?php
+	error_reporting(0);
+	
 	require('libvirt.php');
 	$lv = new Libvirt('qemu:///system');
 	$hn = $lv->get_hostname();
@@ -14,7 +16,7 @@
 		else
 			$tmp = $lv->domain_get_screenshot($_GET['uuid']);
 
-                if (!$tmp)
+        if (!$tmp)
 			echo $lv->get_last_error().'<br />';
 		else {
 			Header('Content-Type: image/png');
