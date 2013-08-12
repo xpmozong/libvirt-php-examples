@@ -3,4 +3,4 @@ libvirt-php-examples
 
 libvirt-php 例子
 
-还在编写中
+<img src="https://github.com/xpmozong/libvirt-php-examples/blob/master/vm.jpg" style="width:100%">
