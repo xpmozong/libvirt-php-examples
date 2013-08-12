@@ -746,7 +746,9 @@ class Libvirt
         if ($res == false)
             return false;
 
-        if (!libvirt_network_set_active($res, $active ? 1 : 0))
+        $active = $active ? 1 : 0;
+
+        if (!libvirt_network_set_active($res, $active))
             return $this->_set_last_error();
 
         return true;

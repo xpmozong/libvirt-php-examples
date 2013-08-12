@@ -5,13 +5,26 @@
     if ($hn == false)
         die('Cannot open connection to hypervisor</body></html>');
 
+    $name = $_POST['vmname'];
+    $res = $lv->get_domain_by_name($name);
+    if($res) exit('此虚拟机名称已存在，请重新<a href="javascript:history.back(-1);">创建</a>！');
+    
+    $memory = ($_POST['memory']) * 1024 * 1024;
+    $cmemory = ($_POST['cmemory']) * 1024 * 1024;
+    $vcpu = $_POST['vcpu'];
+    $hvm = $_POST['hvm'];
+    $img = $_POST['img'];
+    $iso = $_POST['iso'];
+    $bridge = $_POST['bridge'];
+    $address = $_POST['address'];
+
     $xml = "<domain type='kvm'>
-    <name>phpxmlvm</name>
-    <memory>1048576</memory>
-    <currentMemory>1048576</currentMemory>
-    <vcpu>1</vcpu>
+    <name>$name</name>
+    <memory>$memory</memory>
+    <currentMemory>$cmemory</currentMemory>
+    <vcpu>$vcpu</vcpu>
     <os>
-        <type arch='x86_64' machine='pc'>hvm</type>
+        <type arch='$hvm' machine='pc'>hvm</type>
         <boot dev='cdrom'/>
     </os>
     <features>
@@ -26,25 +39,25 @@
     <devices>
         <emulator>/usr/libexec/qemu-kvm</emulator>
         <disk type='file' device='disk'>
-            <source file='/home/data/img/L-CentOS-6.3-x64.img'/>
+            <source file='$img'/>
             <target dev='hda' bus='ide'/>
         </disk>
         <disk type='file' device='cdrom'>
-            <source file='/home/data/iso/GamewaveOS-0.4-x86_64.iso'/>
+            <source file='$iso'/>
             <target dev='hdb' bus='ide'/>
             <readonly/>
         </disk>
         <interface type='bridge'>
-            <source bridge='virbr0'/>
-            <mac address='00:16:3e:5d:aa:a8'/>
+            <source bridge='$bridge'/>
+            <mac address='$address'/>
         </interface>
         <input type='mouse' bus='ps2'/>
         <graphics type='vnc' port='-1' autoport='yes' keymap='en-us' listen='0.0.0.0'/>
     </devices>
 </domain>";
 
-    $lv->domain_define($xml);
+    $res = $lv->domain_define($xml);
 
-    $domains = $lv->get_domains();
-    print_r($domains);
+    if(!empty($res)) header('Location:index.php');
+    else exit($lv->get_last_error());
 ?>

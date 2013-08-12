@@ -1,46 +1,9 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>虚拟机管理</title>
-<link type="text/css" rel="stylesheet" href="bootstrap/css/bootstrap.min.css"/>
-<link type="text/css" rel="stylesheet" href="css/style.css"/>
-<script type="text/javascript" src="js/jquery-1.4.3.min.js"></script>
-</head>
-<body>
 <?php
-require('libvirt.php');
-$lv = new Libvirt('qemu:///system');
-$hn = $lv->get_hostname();
-if ($hn == false)
-    die('Cannot open connection to hypervisor</body></html>');
+require('header.php');
 
 $uri = $lv->get_uri();
 $tmp = $lv->get_domain_count();
-
 ?>
-<div class="navbar navbar-inverse navbar-fixed-top">
-    <div class="navbar-inner">
-        <div class="container">
-            <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            <a class="brand" href="index.php">虚拟机管理</a>
-            <div class="nav-collapse collapse">
-                <ul class="nav">
-                    <li class="active"><a href="index.php">Main page</a></li>
-                    <li><a href="">Host information</a></li>
-                    <li><a href="">Virtual networks</a></li>
-                    <li><a href="">Node devices</a></li>
-                    <li><a href="">Storage pools</a></li>
-                </ul>
-            </div><!--/.nav-collapse -->
-        </div>
-    </div>
-</div>
-
 <div class="wrap">
     <div class="info">
         <p>
@@ -48,6 +11,9 @@ $tmp = $lv->get_domain_count();
         </p>
         <p>
             <?php echo "Statistics: {$tmp['total']} domains, {$tmp['active']} active, {$tmp['inactive']} inactive";?>
+        </p>
+        <p>
+            <button class="btn btn-primary" onclick="javascript:window.location.href='addvm.php'"><i class="icon-plus icon-white"></i>添加虚拟机</button>
         </p>
     </div>
     <div class="list">
@@ -58,19 +24,51 @@ $tmp = $lv->get_domain_count();
         ?>
         <table class="table table-bordered">
             <tr>
-                <th>Name</th>
+                <th>虚拟机名称</th>
                 <th>CPU#</th>
-                <th>Memory</th>
-                <th>Disk(s)</th>
+                <th>内存</th>
+                <th>硬盘(s)</th>
                 <th>NICs</th>
-                <th>Arch</th>
-                <th>State</th>
-                <th>ID / VNC port</th>
-                <?php if (($active > 0) && ($lv->supports('screenshot'))):?><th>Domain screenshot</th><?php endif;?>
-                <th>Action</th>
+                <th>系统位数</th>
+                <th>状态</th>
+                <th>ID / VNC 端口</th>
+                <?php if (($active > 0) && ($lv->supports('screenshot'))):?><th>屏幕截图</th><?php endif;?>
+                <th>操作</th>
             </tr>
-
             <?php
+
+                $ret = false;
+                if ($action) {
+                    $domName = $lv->domain_get_name_by_uuid($_GET['uuid']);
+
+                    if ($action == 'domain-start') {
+                        $ret = $lv->domain_start($domName) ? "Domain has been started successfully" : 'Error while starting domain: '.$lv->get_last_error();
+                    }
+                    else if ($action == 'domain-stop') {
+                        $ret = $lv->domain_shutdown($domName) ? "Domain has been stopped successfully" : 'Error while stopping domain: '.$lv->get_last_error();
+                    }
+                    else if ($action == 'domain-destroy') {
+                        $ret = $lv->domain_destroy($domName) ? "Domain has been destroyed successfully" : 'Error while destroying domain: '.$lv->get_last_error();
+                    }
+                    else if (($action == 'domain-get-xml') || ($action == 'domain-edit')) {
+                        $inactive = (!$lv->domain_is_running($domName)) ? true : false;
+                        $xml = $lv->domain_get_xml($domName, $inactive);
+
+                        if ($action == 'domain-edit') {
+                            if (@$_POST['xmldesc']) {
+                                $ret = $lv->domain_change_xml($domName, $_POST['xmldesc']) ? "Domain definition has been changed" :
+                                                            'Error changing domain definition: '.$lv->get_last_error();
+                            }
+                            else
+                                $ret = 'Editing domain XML description: <br /><br /><form method="POST"><table width="80%"><tr><td width="200px">Domain XML description: </td>'.
+                                    '<td><textarea name="xmldesc" rows="25" style="width:80%">'.$xml.'</textarea></td></tr><tr align="center"><td colspan="2">'.
+                                    '<input type="submit" value=" Edit domain XML description "></tr></form>';
+                        }
+                        else
+                            $ret = "Domain XML for domain <i>$domName</i>:<br /><br />".htmlentities($xml);
+                    }
+                }
+
                 for ($i = 0; $i < sizeof($doms); $i++) {
                     $name = $doms[$i];
                     $res = $lv->get_domain_by_name($name);
@@ -104,7 +102,7 @@ $tmp = $lv->get_domain_count();
 
                     echo "<tr>
                             <td>
-                            <a href=\"?action=domain-information&amp;uuid=$uuid\">$name</a>
+                            <a href=\"domaininfo.php?uuid=$uuid\">$name</a>
                             </td>
                             <td>$cpu</td>
                             <td>$mem</td>
@@ -138,14 +136,12 @@ $tmp = $lv->get_domain_count();
                     if ($active > 0)
                         echo "| <a href=\"?action=get-screenshot&amp;uuid=$uuid\">Get screenshot</a>";
 
-                    echo "
-                            
-                            </td>
-                          </tr>";
+                    echo "</td></tr>";
                 }
             ?>
         </table>
+        <?php if ($ret) echo "<br /><pre>$ret</pre>";?>
     </div>
 </div>
-</body>
-</html>
+
+<?php require('footer.php');?>
