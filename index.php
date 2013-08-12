@@ -36,7 +36,6 @@ $tmp = $lv->get_domain_count();
                 <th>操作</th>
             </tr>
             <?php
-
                 $ret = false;
                 if ($action) {
                     $domName = $lv->domain_get_name_by_uuid($_GET['uuid']);
@@ -68,7 +67,6 @@ $tmp = $lv->get_domain_count();
                             $ret = "Domain XML for domain <i>$domName</i>:<br /><br />".htmlentities($xml);
                     }
                 }
-
                 for ($i = 0; $i < sizeof($doms); $i++) {
                     $name = $doms[$i];
                     $res = $lv->get_domain_by_name($name);
@@ -122,19 +120,17 @@ $tmp = $lv->get_domain_count();
                         ";
 
                     if ($lv->domain_is_running($res, $name))
-                        echo "<a href=\"?action=domain-stop&amp;uuid=$uuid\">Stop domain</a> | <a href=\"?action=domain-destroy&amp;uuid=$uuid\">Destroy domain</a> |";
+                        echo "<button class=\"btn btn-danger\" onclick=\"javascript:location.href='index.php?action=domain-destroy&amp;uuid=$uuid'\">关闭虚拟机</button>";
                     else
-                        echo "<a href=\"?action=domain-start&amp;uuid=$uuid\">Start domain</a> |";
+                        echo "<button class=\"btn btn-success\" onclick=\"javascript:location.href='index.php?action=domain-start&amp;uuid=$uuid'\">开启虚拟机</button>";
 
-                    echo "
-                                <a href=\"?action=domain-get-xml&amp;uuid=$uuid\">Dump domain</a>
-                        ";
+                    // echo "<a href=\"?action=domain-get-xml&amp;uuid=$uuid\">Dump domain</a>";
 
                     if (!$lv->domain_is_running($res, $name))
-                        echo "| <a href=\"?action=domain-edit&amp;uuid=$uuid\">Edit domain XML</a>";
-                    else
-                    if ($active > 0)
-                        echo "| <a href=\"?action=get-screenshot&amp;uuid=$uuid\">Get screenshot</a>";
+                        echo " | <button class=\"btn btn-info\" onclick=\"javascript:location.href='index.php?action=domain-edit&amp;uuid=$uuid'\">编辑XML</button>";
+                    // else
+                    // if ($active > 0)
+                    //     echo "| <a href=\"?action=get-screenshot&amp;uuid=$uuid\">Get screenshot</a>";
 
                     echo "</td></tr>";
                 }
