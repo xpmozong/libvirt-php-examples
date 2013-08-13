@@ -32,108 +32,104 @@ $tmp = $lv->get_domain_count();
                 <th>系统位数</th>
                 <th>状态</th>
                 <th>ID / VNC 端口</th>
-                <?php if (($active > 0) && ($lv->supports('screenshot'))):?><th>屏幕截图</th><?php endif;?>
                 <th>操作</th>
             </tr>
             <?php
-                $ret = false;
-                if ($action) {
-                    $domName = $lv->domain_get_name_by_uuid($_GET['uuid']);
+            $ret = false;
+            if ($action) {
+                $domName = $lv->domain_get_name_by_uuid($_GET['uuid']);
 
-                    if ($action == 'domain-start') {
-                        $ret = $lv->domain_start($domName) ? "Domain has been started successfully" : 'Error while starting domain: '.$lv->get_last_error();
-                    }
-                    else if ($action == 'domain-stop') {
-                        $ret = $lv->domain_shutdown($domName) ? "Domain has been stopped successfully" : 'Error while stopping domain: '.$lv->get_last_error();
-                    }
-                    else if ($action == 'domain-destroy') {
-                        $ret = $lv->domain_destroy($domName) ? "Domain has been destroyed successfully" : 'Error while destroying domain: '.$lv->get_last_error();
-                    }
-                    else if (($action == 'domain-get-xml') || ($action == 'domain-edit')) {
-                        $inactive = (!$lv->domain_is_running($domName)) ? true : false;
-                        $xml = $lv->domain_get_xml($domName, $inactive);
+                if ($action == 'domain-start') {
+                    $ret = $lv->domain_start($domName) ? "Domain has been started successfully" : 'Error while starting domain: '.$lv->get_last_error();
+                }
+                else if ($action == 'domain-stop') {
+                    $ret = $lv->domain_shutdown($domName) ? "Domain has been stopped successfully" : 'Error while stopping domain: '.$lv->get_last_error();
+                }
+                else if ($action == 'domain-destroy') {
+                    $ret = $lv->domain_destroy($domName) ? "Domain has been destroyed successfully" : 'Error while destroying domain: '.$lv->get_last_error();
+                }
+                else if (($action == 'domain-get-xml') || ($action == 'domain-edit')) {
+                    $inactive = (!$lv->domain_is_running($domName)) ? true : false;
+                    $xml = $lv->domain_get_xml($domName, $inactive);
 
-                        if ($action == 'domain-edit') {
-                            if (@$_POST['xmldesc']) {
-                                $ret = $lv->domain_change_xml($domName, $_POST['xmldesc']) ? "Domain definition has been changed" :
-                                                            'Error changing domain definition: '.$lv->get_last_error();
-                            }
-                            else
-                                $ret = 'Editing domain XML description: <br /><br /><form method="POST"><table width="80%"><tr><td width="200px">Domain XML description: </td>'.
-                                    '<td><textarea name="xmldesc" rows="25" style="width:80%">'.$xml.'</textarea></td></tr><tr align="center"><td colspan="2">'.
-                                    '<input type="submit" value=" Edit domain XML description "></tr></form>';
+                    if ($action == 'domain-edit') {
+                        if (@$_POST['xmldesc']) {
+                            $ret = $lv->domain_change_xml($domName, $_POST['xmldesc']) ? "Domain definition has been changed" :
+                                                        'Error changing domain definition: '.$lv->get_last_error();
                         }
                         else
-                            $ret = "Domain XML for domain <i>$domName</i>:<br /><br />".htmlentities($xml);
+                            $ret = 'Editing domain XML description: <br /><br /><form method="POST"><table width="80%"><tr><td width="200px">Domain XML description: </td>'.
+                                '<td><textarea name="xmldesc" rows="25" style="width:80%">'.$xml.'</textarea></td></tr><tr align="center"><td colspan="2">'.
+                                '<input type="submit" value=" Edit domain XML description "></tr></form>';
                     }
-                }
-                for ($i = 0; $i < sizeof($doms); $i++) {
-                    $name = $doms[$i];
-                    $res = $lv->get_domain_by_name($name);
-                    $uuid = libvirt_domain_get_uuid_string($res);
-                    $dom = $lv->domain_get_info($res);
-                    $mem = number_format($dom['memory'] / 1024, 2, '.', ' ').' MB';
-                    $cpu = $dom['nrVirtCpu'];
-                    $state = $lv->domain_state_translate($dom['state']);
-                    $id = $lv->domain_get_id($res);
-                    $arch = $lv->domain_get_arch($res);
-                    $vnc = $lv->domain_get_vnc_port($res);
-                    $nics = $lv->get_network_cards($res);
-                    if (($diskcnt = $lv->get_disk_count($res)) > 0) {
-                        $disks = $diskcnt.' / '.$lv->get_disk_capacity($res);
-                        $diskdesc = 'Current physical size: '.$lv->get_disk_capacity($res, true);
-                    }
-                    else {
-                        $disks = '-';
-                        $diskdesc = '';
-                    }
-
-                    if ($vnc < 0)
-                        $vnc = '-';
                     else
-                        $vnc = $_SERVER['HTTP_HOST'].':'.$vnc;
-
-                    unset($tmp);
-                    if (!$id)
-                        $id = '-';
-                    unset($dom);
-
-                    echo "<tr>
-                            <td>
-                            <a href=\"domaininfo.php?uuid=$uuid\">$name</a>
-                            </td>
-                            <td>$cpu</td>
-                            <td>$mem</td>
-                            <td title='$diskdesc'>$disks</td>
-                            <td>$nics</td>
-                            <td>$arch</td>
-                            <td>$state</td>
-                            <td>$id / $vnc</td>";
-
-                    if (($active > 0) && ($lv->supports('screenshot')))
-                        echo "
-                            <td><img src=\"?action=get-screenshot&uuid=$uuid&width=120\" id=\"screenshot$i\"></td>
-                        ";
-
-                        echo "
-                            <td>
-                        ";
-
-                    if ($lv->domain_is_running($res, $name))
-                        echo "<button class=\"btn btn-danger\" onclick=\"javascript:location.href='index.php?action=domain-destroy&amp;uuid=$uuid'\">关闭虚拟机</button>";
-                    else
-                        echo "<button class=\"btn btn-success\" onclick=\"javascript:location.href='index.php?action=domain-start&amp;uuid=$uuid'\">开启虚拟机</button>";
-
-                    // echo "<a href=\"?action=domain-get-xml&amp;uuid=$uuid\">Dump domain</a>";
-
-                    if (!$lv->domain_is_running($res, $name))
-                        echo " | <button class=\"btn btn-info\" onclick=\"javascript:location.href='index.php?action=domain-edit&amp;uuid=$uuid'\">编辑XML</button>";
-                    // else
-                    // if ($active > 0)
-                    //     echo "| <a href=\"?action=get-screenshot&amp;uuid=$uuid\">Get screenshot</a>";
-
-                    echo "</td></tr>";
+                        $ret = "Domain XML for domain <i>$domName</i>:<br /><br />".htmlentities($xml);
                 }
+            }
+            for ($i = 0; $i < sizeof($doms); $i++) {
+                $name = $doms[$i];
+                $res = $lv->get_domain_by_name($name);
+                $uuid = libvirt_domain_get_uuid_string($res);
+                $dom = $lv->domain_get_info($res);
+                $mem = number_format($dom['memory'] / 1024, 2, '.', ' ').' MB';
+                $cpu = $dom['nrVirtCpu'];
+                $state = $lv->domain_state_translate($dom['state']);
+                $id = $lv->domain_get_id($res);
+                $arch = $lv->domain_get_arch($res);
+                $vnc = $lv->domain_get_vnc_port($res);
+                $nics = $lv->get_network_cards($res);
+                if (($diskcnt = $lv->get_disk_count($res)) > 0) {
+                    $disks = $diskcnt.' / '.$lv->get_disk_capacity($res);
+                    $diskdesc = 'Current physical size: '.$lv->get_disk_capacity($res, true);
+                }
+                else {
+                    $disks = '-';
+                    $diskdesc = '';
+                }
+
+                if ($vnc < 0)
+                    $vnc = '-';
+                else
+                    $vnc = $_SERVER['HTTP_HOST'].':'.$vnc;
+
+                unset($tmp);
+                if (!$id)
+                    $id = '-';
+                unset($dom);
+
+                echo "<tr>
+                        <td>
+                        <a href=\"domaininfo.php?uuid=$uuid\">$name</a>
+                        </td>
+                        <td>$cpu</td>
+                        <td>$mem</td>
+                        <td title='$diskdesc'>$disks</td>
+                        <td>$nics</td>
+                        <td>$arch</td>
+                        <td>$state</td>
+                        <td>$id / $vnc</td>";
+
+                // if (($active > 0) && ($lv->supports('screenshot')))
+                //     echo "<td><img src=\"?action=get-screenshot&uuid=$uuid&width=120\" id=\"screenshot$i\"></td>";
+
+                echo "<td>";
+
+                if ($lv->domain_is_running($res, $name)){
+                    echo "<button class=\"btn btn-warning\" onclick=\"javascript:location.href='index.php?action=domain-stop&amp;uuid=$uuid'\">关机</button> | ";
+                    echo "<button class=\"btn btn-danger\" onclick=\"javascript:location.href='index.php?action=domain-destroy&amp;uuid=$uuid'\">强制关机</button>";
+                }else
+                    echo "<button class=\"btn btn-success\" onclick=\"javascript:location.href='index.php?action=domain-start&amp;uuid=$uuid'\">开启</button>";
+
+                // echo "<a href=\"?action=domain-get-xml&amp;uuid=$uuid\">Dump domain</a>";
+
+                if (!$lv->domain_is_running($res, $name))
+                    echo " | <button class=\"btn btn-info\" onclick=\"javascript:location.href='index.php?action=domain-edit&amp;uuid=$uuid'\">编辑XML</button>";
+                // else
+                // if ($active > 0)
+                //     echo "| <a href=\"?action=get-screenshot&amp;uuid=$uuid\">Get screenshot</a>";
+
+                echo "</td></tr>";
+            }
             ?>
         </table>
         <?php if ($ret) echo "<br /><pre>$ret</pre>";?>
