@@ -3,6 +3,7 @@ require('header.php');
 
 $uri = $lv->get_uri();
 $tmp = $lv->get_domain_count();
+
 ?>
 <div class="wrap">
     <div class="info">
@@ -38,7 +39,6 @@ $tmp = $lv->get_domain_count();
             $ret = false;
             if ($action) {
                 $domName = $lv->domain_get_name_by_uuid($_GET['uuid']);
-
                 if ($action == 'domain-start') {
                     $ret = $lv->domain_start($domName) ? "Domain has been started successfully" : 'Error while starting domain: '.$lv->get_last_error();
                 }
@@ -87,11 +87,14 @@ $tmp = $lv->get_domain_count();
                     $diskdesc = '';
                 }
 
-                if ($vnc < 0)
+                if ($vnc < 0){
                     $vnc = '-';
-                else
+                    $vncport = $vnc;
+                }else{
+                    $vncport = $vnc;
                     $vnc = $_SERVER['HTTP_HOST'].':'.$vnc;
-
+                }
+                    
                 unset($tmp);
                 if (!$id)
                     $id = '-';
@@ -109,24 +112,21 @@ $tmp = $lv->get_domain_count();
                         <td>$state</td>
                         <td>$id / $vnc</td>";
 
-                // if (($active > 0) && ($lv->supports('screenshot')))
-                //     echo "<td><img src=\"?action=get-screenshot&uuid=$uuid&width=120\" id=\"screenshot$i\"></td>";
-
                 echo "<td>";
 
                 if ($lv->domain_is_running($res, $name)){
+                    echo "<button class=\"btn btn-info\" onclick=\"javascript:window.open('index.php?action=domain-vnc&amp;vmname=$name');\">VNC</button> | ";
                     echo "<button class=\"btn btn-warning\" onclick=\"javascript:location.href='index.php?action=domain-stop&amp;uuid=$uuid'\">关机</button> | ";
                     echo "<button class=\"btn btn-danger\" onclick=\"javascript:location.href='index.php?action=domain-destroy&amp;uuid=$uuid'\">强制关机</button>";
                 }else
                     echo "<button class=\"btn btn-success\" onclick=\"javascript:location.href='index.php?action=domain-start&amp;uuid=$uuid'\">开启</button>";
 
-                // echo "<a href=\"?action=domain-get-xml&amp;uuid=$uuid\">Dump domain</a>";
+                echo " | <button class=\"btn btn-info\" onclick=\"javascript:location.href='index.php?action=domain-edit&amp;uuid=$uuid'\">编辑XML</button>";
 
                 if (!$lv->domain_is_running($res, $name))
-                    echo " | <button class=\"btn btn-info\" onclick=\"javascript:location.href='index.php?action=domain-edit&amp;uuid=$uuid'\">编辑XML</button>";
-                // else
-                // if ($active > 0)
-                //     echo "| <a href=\"?action=get-screenshot&amp;uuid=$uuid\">Get screenshot</a>";
+                    echo " | <button class=\"btn btn-danger\" onclick=\"javascript:location.href='delvm.php?vmname=$name'\">删除</button>";
+                else
+                    echo " | <a href=\"screenshot.php?uuid=$uuid\">屏幕截图</a>";
 
                 echo "</td></tr>";
             }

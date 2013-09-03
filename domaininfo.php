@@ -237,7 +237,7 @@ require('header.php');
                     echo 'Domain doesn\'t have any network devices';
 
                 if ( $dom['state'] == 1 ) {
-                    echo "<h3>Screenshot</h3><img src=\"?action=get-screenshot&uuid={$_GET['uuid']}&width=640\">";
+                    echo "<h3>屏幕截图</h3><img src=\"screenshot.php?uuid={$_GET['uuid']}\">";
                 }
         ?>
     </div>
